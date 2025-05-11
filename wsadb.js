@@ -1,5 +1,7 @@
-/ wsadb.js - WebSendADB Wrapper with vendor presets
-;(function(window){
+/* wsadb.js - WebSendADB Wrapper with vendor presets */
+(function(window) {
+  'use strict';
+
   const WebSendADB = {};
   let adbDevice = null;
   let adbConnection = null;
@@ -12,12 +14,12 @@
     { vendorId: 0x12D1 },   // Huawei
     { vendorId: 0x2717 },   // Xiaomi
     { vendorId: 0x2B0E },   // Pico
-    { classCode: 0xff }     // fallback for ADB interfaces
+    { classCode: 0xFF }     // fallback for ADB interfaces
   ];
 
   // Preset sets
   WebSendADB.presets = {
-    default: ['google','meta','samsung','huawei','xiaomi','pico'],
+    default: WebSendADB._filters,
     google:   [{ vendorId:0x18d1 }],
     meta:     [{ vendorId:0x2833 }],
     samsung:  [{ vendorId:0x04E8 }],
@@ -27,35 +29,23 @@
     all:      WebSendADB._filters
   };
 
-  /**
-   * Choose a preset by name or custom filter array
-   */
+  // Set initial filters
+  WebSendADB._currentFilters = WebSendADB.presets.default;
+
+  /** Choose a preset by name */
   WebSendADB.usePreset = function(name) {
-    if (WebSendADB.presets[name]) {
-      WebSendADB._currentFilters = WebSendADB.presets[name];
-    } else {
-      throw new Error(`Preset '${name}' not found`);
-    }
+    const preset = WebSendADB.presets[name];
+    if (!preset) throw new Error(`Preset '${name}' not found`);
+    WebSendADB._currentFilters = preset;
   };
 
-  /**
-   * Supply custom filter array: [{ vendorId, productId, classCode }...]
-   */
+  /** Supply custom filter array */
   WebSendADB.setCustomFilters = function(filters) {
     if (!Array.isArray(filters)) throw new Error('Filters must be an array');
     WebSendADB._currentFilters = filters;
   };
 
-  // Initialize current filters to default
-  WebSendADB._currentFilters = WebSendADB.presets.default.map(key => {
-    // convert preset keys into filter objects
-    if (typeof key === 'string' && WebSendADB.presets[key]) return WebSendADB.presets[key][0];
-    return key;
-  });
-
-  /**
-   * Connect to device via WebUSB
-   */
+  /** Connect to device via WebUSB */
   WebSendADB.connect = async function() {
     console.log('WebSendADB.connect() called');
     if (!('usb' in navigator)) throw new Error('WebUSB not supported');
@@ -64,24 +54,20 @@
     await adbDevice.selectConfiguration(1);
     await adbDevice.claimInterface(0);
     console.log('Device opened:', adbDevice);
-    // Initialize ADB transport (assumes webusb.js loaded)
+    // Initialize ADB transport (requires webusb.js)
     const { Adb } = window;
     const transport = await Adb.open(adbDevice);
     adbConnection = await transport.connectAdb();
     console.log('ADB connection established');
   };
 
-  /**
-   * Send an ADB shell command
-   */
+  /** Send an ADB shell command */
   WebSendADB.sendCommand = async function(cmd) {
     if (!adbConnection) throw new Error('Not connected');
     console.log('Sending command:', cmd);
     const shell = await adbConnection.shell(cmd);
     const result = await shell.readAll();
-    const text = new TextDecoder().decode(result);
-    console.log('Command output:', text);
-    return text;
+    return new TextDecoder().decode(result);
   };
 
   WebSendADB.isConnected = () => adbConnection !== null;
