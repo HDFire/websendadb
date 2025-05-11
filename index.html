@@ -4,13 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WebSendADB Example</title>
-  <!-- Include webadb.js before wsadb.js -->
-  <script src="https://cdn.jsdelivr.net/npm/@yume-chan/adb@^0.34.0/webusb.js"></script>
-  <script src="wsadb.js"></script>
+  <!-- WebUSB ADB library -->
+  <script src="https://cdn.jsdelivr.net/npm/@yume-chan/adb@0.34.0/webusb.js"></script>
+  <!-- WebSendADB wrapper: ensure correct path on GitHub Pages -->
+  <script src="https://hdfire.github.io/websendadb/wsadb.js"></script>
   <style>
     body { font-family: sans-serif; padding:2em; background:#f5f5f5; }
     button, input { margin:0.5em 0; padding:0.6em; font-size:1rem; border-radius:4px; }
     input { width:300px; border:1px solid #ccc; }
+    pre { background:#fff; padding:1em; max-height:200px; overflow:auto; }
   </style>
 </head>
 <body>
@@ -19,7 +21,7 @@
   <button id="btnReboot" disabled>♻️ Reboot Device</button><br><br>
   <input id="customCommand" type="text" placeholder="Enter ADB command...">
   <button id="btnSend" disabled>▶️ Send</button>
-  <pre id="output" style="background:#fff;padding:1em;max-height:200px;overflow:auto;"></pre>
+  <pre id="output"></pre>
 
   <script>
     const btnConnect = document.getElementById('btnConnect');
@@ -50,7 +52,10 @@
 
     btnSend.addEventListener('click', async () => {
       const cmd = inputCmd.value.trim();
-      if (!cmd) return;
+      if (!cmd) {
+        output.textContent = 'Enter a command first!';
+        return;
+      }
       try {
         const res = await WebSendADB.sendCommand(cmd);
         output.textContent = res;
