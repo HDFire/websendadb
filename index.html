@@ -1,50 +1,191 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WebSendADB Example</title>
-  <script src="websendadb.js"></script>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 2em;
-      background: #f5f5f5;
-    }
-    button {
-      margin: 0.5em 0;
-      padding: 0.6em 1.2em;
-      font-size: 1rem;
-    }
-    input {
-      padding: 0.5em;
-      font-size: 1rem;
-      width: 300px;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebSendADB Example</title>
+    <script src="https://hdfire.github.io/websendadb/wsadb.js"></script>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 2em;
+            background: #f5f5f5;
+            /* Added transition for smoother hiding */
+            transition: opacity 0.5s ease-in-out;
+        }
+        /* Style to hide the body content when the modal is active */
+        body.modal-active > *:not(.modal-overlay) {
+            opacity: 0;
+            pointer-events: none; /* Prevent interaction with hidden content */
+        }
+
+        button {
+            margin: 0.5em 0;
+            padding: 0.6em 1.2em;
+            font-size: 1rem;
+            border-radius: 0.25rem; /* Added rounded corners to existing buttons */
+            cursor: pointer; /* Indicate clickable */
+        }
+        input {
+            padding: 0.5em;
+            font-size: 1rem;
+            width: 300px;
+            border-radius: 0.25rem; /* Added rounded corners to input */
+            border: 1px solid #ccc; /* Added a border */
+        }
+
+        /* Custom styles for the modal overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; /* Ensure it's on top of other content */
+            /* Added transition for smoother appearance */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+        }
+
+        /* Style to make the modal visible */
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+
+        /* Custom styles for the modal content */
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem; /* Rounded corners */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+            max-width: 90%; /* Max width on smaller screens */
+            width: 400px; /* Fixed width on larger screens */
+            text-align: center;
+        }
+
+        /* Style for the blank page message - No longer needed for this approach */
+        /* #blank-page-message {
+            font-size: 1.2rem;
+            color: #555;
+        } */
+    </style>
 </head>
 <body>
-  <h1>WebSendADB Demo</h1>
+    <h1>WebSendADB Demo</h1>
 
-  <button onclick="WebSendADB.connect()">🔌 Connect Device</button>
-  <br />
+    <button onclick="WebSendADB.connect()">🔌 Connect Device</button>
+    <br />
 
-  <button onclick="WebSendADB.sendCommand('reboot')">♻️ Reboot Device</button>
-  <br /><br />
+    <button onclick="WebSendADB.sendCommand('reboot')">♻️ Reboot Device</button>
+    <br /><br />
 
-  <input id="customCommand" type="text" placeholder="Enter ADB command..." />
-  <button onclick="sendCustomCommand()">▶️ Send</button>
+    <input id="customCommand" type="text" placeholder="Enter ADB command..." />
+    <button onclick="sendCustomCommand()">▶️ Send</button>
 
-  <script>
-    async function sendCustomCommand() {
-      const cmd = document.getElementById("customCommand").value.trim();
-      if (cmd) {
-        await WebSendADB.sendCommand(cmd);
-      } else {
-        alert("Enter a command first!");
-      }
-    }
-  </script>
+    <script>
+        async function sendCustomCommand() {
+            const cmd = document.getElementById("customCommand").value.trim();
+            if (cmd) {
+                // Assuming WebSendADB.sendCommand handles potential errors internally
+                await WebSendADB.sendCommand(cmd);
+            } else {
+                // Replaced alert with a simple console log or could use a custom modal/message area
+                console.log("Enter a command first!");
+                // If you want a visible message, you would add a div to display it
+                // For example: document.getElementById('messageArea').innerText = "Enter a command first!";
+            }
+        }
+    </script>
+
+    <div id="webusb-modal-overlay" class="modal-overlay">
+        <div class="modal-content">
+            <h2 class="text-xl font-semibold mb-4">Browser Not Supported</h2>
+            <p class="mb-6">
+                It looks like your browser does not support WebUSB, which is required for this website to function correctly.
+                Please use a compatible browser such as Google Chrome, Microsoft Edge, or Opera.
+            </p>
+            <div class="flex justify-center space-x-4">
+                <button id="close-modal-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Continue Anyway
+                </button>
+                <button id="close-website-button" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Close Website
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get references to the modal elements and body
+        const modalOverlay = document.getElementById('webusb-modal-overlay');
+        const closeModalButton = document.getElementById('close-modal-button');
+        const closeWebsiteButton = document.getElementById('close-website-button');
+        const body = document.body;
+
+        // Function to check for WebUSB support and specific browsers
+        function checkWebUSBSUPPORT() {
+            const userAgent = navigator.userAgent;
+            let unsupportedBrowser = false;
+
+            // Basic browser/version detection (less reliable than navigator.usb)
+            if (/Firefox/.test(userAgent)) {
+                unsupportedBrowser = true; // Firefox does not support WebUSB
+            } else if (/Safari/.test(userAgent) && !/Chrome/.test(userAgent)) {
+                 unsupportedBrowser = true; // Safari does not support WebUSB (exclude Chrome which includes Safari in UA)
+            } else if (/Chrome/.test(userAgent)) {
+                const chromeVersion = parseInt(userAgent.match(/Chrome\/(\d+)/)[1], 10);
+                if (chromeVersion < 61) {
+                    unsupportedBrowser = true;
+                }
+            } else if (/Edg/.test(userAgent)) { // Microsoft Edge (newer versions use Edg)
+                 const edgeVersion = parseInt(userAgent.match(/Edg\/(\d+)/)[1], 10);
+                 if (edgeVersion < 79) {
+                     unsupportedBrowser = true;
+                 }
+            } else if (/Opera|OPR/.test(userAgent)) { // Opera or Opera GX (OPR)
+                const operaVersion = parseInt(userAgent.match(/(Opera|OPR)\/(\d+)/)[2], 10);
+                 if (operaVersion < 48) {
+                     unsupportedBrowser = true;
+                 }
+            }
+
+            // Check if navigator.usb exists OR if the browser is detected as unsupported
+            if (navigator.usb === undefined || unsupportedBrowser) {
+                // If not supported, display the modal
+                modalOverlay.classList.add('visible'); // Use 'visible' class for transition
+                body.classList.add('modal-active'); // Add class to body to hide content
+            }
+            // If supported, the modal remains hidden
+        }
+
+        // Add event listener to the close modal button
+        closeModalButton.addEventListener('click', () => {
+            modalOverlay.classList.remove('visible'); // Hide the modal
+            body.classList.remove('modal-active'); // Show body content
+        });
+
+        // Add event listener to the close website button
+        closeWebsiteButton.addEventListener('click', () => {
+            // Redirect the current tab to about:blank
+            // This relies on the user click action to potentially allow the navigation
+            window.location.replace('about:blank');
+            // Using replace() is generally better than assigning to href for this purpose
+            // as it prevents the original page from being accessible via the back button.
+        });
+
+        // Run the check when the page loads
+        window.onload = checkWebUSBSUPPORT;
+
+    </script>
+
 </body>
 </html>
 
