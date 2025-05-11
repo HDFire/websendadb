@@ -1,5 +1,5 @@
 // wsadb.js - WebSendADB wrapper (requires global Adb and AdbWebUsbTransport)
-console.log("WebSendAdb Build 3");
+console.log("WebSendAdb Build 4");
 ;(function(window) {
   'use strict';
   console.log('WebSendADB wrapper loaded');
