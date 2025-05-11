@@ -4,8 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WebSendADB Example</title>
-  <!-- Load the bundled module -->
-  <script type="module" src="wsadb.js"></script>
   <style>
     body { font-family: sans-serif; padding:2em; background:#f5f5f5; }
     button, select, input { margin:0.5em 0; padding:0.6em; font-size:1rem; border-radius:4px; }
@@ -16,27 +14,28 @@
 <body>
   <h1>WebSendADB Demo</h1>
 
-  <div>
-    <label for="vendorPreset">Device Preset:</label><br>
-    <select id="vendorPreset">
-      <option value="default">Default</option>
-      <option value="google">Google</option>
-      <option value="meta">Meta/Oculus</option>
-      <option value="samsung">Samsung</option>
-      <option value="huawei">Huawei</option>
-      <option value="xiaomi">Xiaomi</option>
-      <option value="pico">Pico</option>
-      <option value="all">All</option>
-    </select>
-    <button id="btnPreset">Apply Preset</button>
-  </div>
+  <label for="vendorPreset">Device Preset:</label><br>
+  <select id="vendorPreset">
+    <option value="default" selected>Default</option>
+    <option value="google">Google</option>
+    <option value="meta">Meta/Oculus</option>
+    <option value="samsung">Samsung</option>
+    <option value="huawei">Huawei</option>
+    <option value="xiaomi">Xiaomi</option>
+    <option value="pico">Pico</option>
+    <option value="all">All</option>
+  </select>
+  <button id="btnPreset">Apply Preset</button><br><br>
 
   <button id="btnConnect">🔌 Connect Device</button><br>
-  <button id="btnReboot" disabled>♻️ Reboot Device</button><br><br>
+  <button id="btnReboot" disabled>♻️ Reboot</button><br><br>
 
-  <input id="customCommand" type="text" placeholder="Enter ADB command...">
+  <input id="customCommand" type="text" placeholder="Enter ADB command..." />
   <button id="btnSend" disabled>▶️ Send</button>
   <pre id="output"></pre>
+
+  <!-- Single script include -->
+  <script src="https://hdfire.github.io/websendadb/wsadb.js"></script>
 
   <script>
     const btnPreset  = document.getElementById('btnPreset');
@@ -47,45 +46,23 @@
     const inputCmd   = document.getElementById('customCommand');
     const output     = document.getElementById('output');
 
-    btnPreset.addEventListener('click', () => {
-      try {
-        WebSendADB.usePreset(vendorSel.value);
-        output.textContent = `Preset '${vendorSel.value}' applied.`;
-      } catch(e) {
-        output.textContent = 'Error: ' + e.message;
-      }
-    });
-
-    btnConnect.addEventListener('click', async () => {
-      try {
-        await WebSendADB.connect();
-        btnReboot.disabled = false;
-        btnSend.disabled   = false;
-        output.textContent = 'Connected.';
-      } catch (e) {
-        output.textContent = 'Error: ' + e.message;
-      }
-    });
-
-    btnReboot.addEventListener('click', async () => {
-      try {
-        const res = await WebSendADB.sendCommand('reboot');
-        output.textContent = res || 'Reboot command sent.';
-      } catch (e) {
-        output.textContent = 'Error: ' + e.message;
-      }
-    });
-
-    btnSend.addEventListener('click', async () => {
-      const cmd = inputCmd.value.trim();
-      if (!cmd) { output.textContent = 'Enter a command first!'; return; }
-      try {
-        const res = await WebSendADB.sendCommand(cmd);
-        output.textContent = res;
-      } catch (e) {
-        output.textContent = 'Error: ' + e.message;
-      }
-    });
+    btnPreset.onclick = () => {
+      try { WebSendADB.usePreset(vendorSel.value); output.textContent = `Preset '${vendorSel.value}' applied.`; }
+      catch(e){ output.textContent = 'Error: ' + e.message; }
+    };
+    btnConnect.onclick = async () => {
+      try { await WebSendADB.connect(); btnReboot.disabled = btnSend.disabled = false; output.textContent = 'Connected'; }
+      catch(e){ output.textContent = 'Error: ' + e.message; }
+    };
+    btnReboot.onclick = async () => {
+      try { const r = await WebSendADB.sendCommand('reboot'); output.textContent = r || 'Reboot sent'; }
+      catch(e){ output.textContent = 'Error: ' + e.message; }
+    };
+    btnSend.onclick = async () => {
+      const c = inputCmd.value.trim(); if(!c) return output.textContent='Enter command';
+      try { output.textContent = await WebSendADB.sendCommand(c); }
+      catch(e){ output.textContent = 'Error: ' + e.message; }
+    };
   </script>
 </body>
 </html>

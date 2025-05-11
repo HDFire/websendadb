@@ -14,7 +14,7 @@
 
 Just include the script in your HTML:
 
-    <script src="websendadb.js"></script>
+    <script src="https://hdfire.github.io/websendadb/wsadb.js"></script>
 
 ## 📚 Basic Usage
 
