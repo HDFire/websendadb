@@ -1,9 +1,10 @@
-// wsadb.js - WebSendADB wrapper that dynamically loads ya-webadb
-console.log("WebSendAdb Build 2");
+// wsadb.js - WebSendADB wrapper (requires global Adb and AdbWebUsbTransport)
+console.log("WebSendAdb Build 3");
 ;(function(window) {
   'use strict';
+  console.log('WebSendADB wrapper loaded');
+
   const WebSendADB = {};
-  let AdbModule = null;
   let adbDevice = null;
   let adbConnection = null;
 
@@ -29,14 +30,6 @@ console.log("WebSendAdb Build 2");
     all:      filters
   };
 
-  // Lazy-load ya-webadb module
-  async function _ensureAdb() {
-    if (!AdbModule) {
-      AdbModule = await import('https://cdn.jsdelivr.net/npm/@yume-chan/adb@0.34.0/dist/esm/webusb.js');
-    }
-    return AdbModule;
-  }
-
   WebSendADB.usePreset = function(name) {
     if (!presets[name]) throw new Error(`Preset '${name}' not found`);
     filters = presets[name];
@@ -45,13 +38,16 @@ console.log("WebSendAdb Build 2");
   WebSendADB.connect = async function() {
     console.log('WebSendADB.connect()');
     if (!navigator.usb) throw new Error('WebUSB not supported');
-    const { Adb, AdbWebUsbTransport } = await _ensureAdb();
+    if (!window.Adb || !window.AdbWebUsbTransport) {
+      throw new Error('Host page must include ADB WebUSB library (e.g. webusb.js)');
+    }
     adbDevice = await navigator.usb.requestDevice({ filters });
     await adbDevice.open();
     await adbDevice.selectConfiguration(1);
     await adbDevice.claimInterface(0);
-    const transport = new AdbWebUsbTransport(adbDevice);
-    const adb = await Adb.open(transport);
+    // Use global Adb & AdbWebUsbTransport
+    const transport = new window.AdbWebUsbTransport(adbDevice);
+    const adb = await window.Adb.open(transport);
     adbConnection = await adb.connect('host::');
   };
 
