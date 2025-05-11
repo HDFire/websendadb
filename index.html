@@ -6,29 +6,59 @@
   <title>WebSendADB Example</title>
   <!-- WebUSB ADB library -->
   <script src="https://cdn.jsdelivr.net/npm/@yume-chan/adb@0.34.0/webusb.js"></script>
-  <!-- WebSendADB wrapper: ensure correct path on GitHub Pages -->
-  <script src="https://hdfire.github.io/websendadb/wsadb.js"></script>
+  <!-- WebSendADB wrapper -->
+  <script src="wsadb.js"></script>
   <style>
     body { font-family: sans-serif; padding:2em; background:#f5f5f5; }
-    button, input { margin:0.5em 0; padding:0.6em; font-size:1rem; border-radius:4px; }
-    input { width:300px; border:1px solid #ccc; }
+    button, select, input { margin:0.5em 0; padding:0.6em; font-size:1rem; border-radius:4px; }
+    select, input { width:320px; border:1px solid #ccc; }
     pre { background:#fff; padding:1em; max-height:200px; overflow:auto; }
   </style>
 </head>
 <body>
   <h1>WebSendADB Demo</h1>
+
+  <!-- Vendor preset selector -->
+  <div>
+    <label for="vendorPreset">Device Preset:</label><br>
+    <select id="vendorPreset">
+      <option value="default">Default</option>
+      <option value="google">Google</option>
+      <option value="meta">Meta/Oculus</option>
+      <option value="samsung">Samsung</option>
+      <option value="huawei">Huawei</option>
+      <option value="xiaomi">Xiaomi</option>
+      <option value="pico">Pico</option>
+      <option value="all">All</option>
+    </select>
+  </div>
+
+  <button id="btnPreset">Apply Preset</button><br>
   <button id="btnConnect">🔌 Connect Device</button><br>
   <button id="btnReboot" disabled>♻️ Reboot Device</button><br><br>
+
   <input id="customCommand" type="text" placeholder="Enter ADB command...">
   <button id="btnSend" disabled>▶️ Send</button>
   <pre id="output"></pre>
 
   <script>
+    const btnPreset  = document.getElementById('btnPreset');
+    const vendorSel  = document.getElementById('vendorPreset');
     const btnConnect = document.getElementById('btnConnect');
     const btnReboot  = document.getElementById('btnReboot');
     const btnSend    = document.getElementById('btnSend');
     const inputCmd   = document.getElementById('customCommand');
-    const output    = document.getElementById('output');
+    const output     = document.getElementById('output');
+
+    btnPreset.addEventListener('click', () => {
+      const p = vendorSel.value;
+      try {
+        WebSendADB.usePreset(p);
+        output.textContent = `Preset '${p}' applied.`;
+      } catch(e) {
+        output.textContent = 'Error: ' + e.message;
+      }
+    });
 
     btnConnect.addEventListener('click', async () => {
       try {
