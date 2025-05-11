@@ -1,5 +1,5 @@
 // wsadb.js - WebSendADB wrapper that dynamically loads ya-webadb
-console.log("websendadb build 1");
+console.log("WebSendAdb Build 2");
 ;(function(window) {
   'use strict';
   const WebSendADB = {};
@@ -32,7 +32,7 @@ console.log("websendadb build 1");
   // Lazy-load ya-webadb module
   async function _ensureAdb() {
     if (!AdbModule) {
-      AdbModule = await import('https://unpkg.com/@yume-chan/adb@0.34.0/dist/esm/webusb.js');
+      AdbModule = await import('https://cdn.jsdelivr.net/npm/@yume-chan/adb@0.34.0/dist/esm/webusb.js');
     }
     return AdbModule;
   }
