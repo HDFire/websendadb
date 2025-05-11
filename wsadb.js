@@ -1,5 +1,5 @@
 // wsadb.js - WebSendADB wrapper (requires global Adb and AdbWebUsbTransport)
-console.log("WebSendAdb Build 4");
+console.log("WebSendAdb Build 5");
 ;(function(window) {
   'use strict';
   console.log('WebSendADB wrapper loaded');
@@ -39,7 +39,7 @@ console.log("WebSendAdb Build 4");
     console.log('WebSendADB.connect()');
     if (!navigator.usb) throw new Error('WebUSB not supported');
     if (!window.Adb || !window.AdbWebUsbTransport) {
-      throw new Error('Host page must include ADB WebUSB library (e.g. webusb.js)');
+      throw new Error('Host page must include the WebADB library (webadb.js) before wsadb.js');
     }
     adbDevice = await navigator.usb.requestDevice({ filters });
     await adbDevice.open();
