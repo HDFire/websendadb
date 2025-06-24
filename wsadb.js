@@ -1,8 +1,9 @@
-// wsadb.js - WebSendADB wrapper (requires global Adb and AdbWebUsbTransport)
-console.log("WebSendAdb Build 6");
+// wsadb.js - auto-load webadb if missing, then run wrapper
 ;(function(window) {
   'use strict';
-  console.log('WebSendADB wrapper loaded');
+  console.log('WebSendADB wrapper build 7 loaded');
+
+  const WEBADB_URL = 'https://cdn.jsdelivr.net/npm/webadb@6.0.9/webadb.js';
 
   const WebSendADB = {};
   let adbDevice = null;
@@ -35,16 +36,40 @@ console.log("WebSendAdb Build 6");
     filters = presets[name];
   };
 
+  // Load webadb.js script dynamically if needed
+  function loadWebADB() {
+    return new Promise((resolve, reject) => {
+      if (window.Adb && window.AdbWebUsbTransport) {
+        // Already loaded
+        resolve();
+        return;
+      }
+      console.log('Loading webadb.js dynamically...');
+      const script = document.createElement('script');
+      script.src = WEBADB_URL;
+      script.onload = () => {
+        console.log('webadb.js loaded');
+        // Wait a tiny bit for globals to initialize
+        setTimeout(() => {
+          if (window.Adb && window.AdbWebUsbTransport) {
+            resolve();
+          } else {
+            reject(new Error('webadb.js loaded but WebADB globals not found'));
+          }
+        }, 50);
+      };
+      script.onerror = () => reject(new Error('Failed to load webadb.js'));
+      document.head.appendChild(script);
+    });
+  }
+
   WebSendADB.connect = async function() {
-    console.log('WebSendADB.connect()');
     if (!navigator.usb) throw new Error('WebUSB not supported');
+
+    await loadWebADB();
 
     const Adb = window.Adb || (window.WebUSB && window.WebUSB.Adb);
     const AdbWebUsbTransport = window.AdbWebUsbTransport || (window.WebUSB && window.WebUSB.AdbWebUsbTransport);
-
-    if (!Adb || !AdbWebUsbTransport) {
-      throw new Error('Host page must include the WebADB library (webadb.js) before wsadb.js');
-    }
 
     adbDevice = await navigator.usb.requestDevice({ filters });
     await adbDevice.open();
