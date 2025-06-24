@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WebSendADB Demo</title>
+  <title>WebSendADB Demo v2</title>
   <style>
     body { font-family: sans-serif; padding:2em; background:#f5f5f5; }
     button, select, input { margin:0.5em 0; padding:0.6em; font-size:1rem; border-radius:4px; }
@@ -12,6 +12,11 @@
   </style>
   <!-- Include WebADB ADB-over-WebUSB library -->
   <script src="https://cdn.jsdelivr.net/gh/webadb/webadb.js@master/webadb.js"></script>
+
+  <script>
+  console.log('Adb on window?', !!window.Adb, 'AdbWebUsbTransport on window?', !!window.AdbWebUsbTransport);
+  </script>
+
   <!-- Then include the WebSendADB wrapper -->
   <script src="https://hdfire.github.io/websendadb/wsadb.js"></script>
 </head>
