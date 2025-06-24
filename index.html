@@ -1,108 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WebSendADB Demo v2</title>
-  <style>
-    body { font-family: sans-serif; padding:2em; background:#f5f5f5; }
-    button, select, input { margin:0.5em 0; padding:0.6em; font-size:1rem; border-radius:4px; }
-    select, input { width:320px; border:1px solid #ccc; }
-    pre { background:#fff; padding:1em; max-height:200px; overflow:auto; }
-  </style>
-  <!-- Include WebADB ADB-over-WebUSB library -->
-  <script src="https://cdn.jsdelivr.net/gh/webadb/webadb.js@master/webadb.js"></script>
-
-  <script>
-  console.log('Adb on window?', !!window.Adb, 'AdbWebUsbTransport on window?', !!window.AdbWebUsbTransport);
-  </script>
-
-  <!-- Then include the WebSendADB wrapper -->
-  <script src="https://hdfire.github.io/websendadb/wsadb.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WebSendADB Demo with Presets</title>
+<style>
+  body {
+    background: #121212;
+    color: #eee;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 20px;
+    max-width: 600px;
+    margin: auto;
+  }
+  h1 {
+    color: #1db954;
+    text-align: center;
+  }
+  button, select {
+    background: #1db954;
+    border: none;
+    padding: 12px 20px;
+    color: #121212;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    margin: 10px 0;
+  }
+  button:disabled {
+    background: #444;
+    cursor: not-allowed;
+  }
+  select {
+    width: 100%;
+    font-size: 16px;
+    appearance: none;
+  }
+  textarea {
+    width: 100%;
+    height: 200px;
+    background: #222;
+    color: #0f0;
+    font-family: monospace;
+    font-size: 14px;
+    border-radius: 6px;
+    padding: 10px;
+    resize: vertical;
+  }
+  input[type="text"] {
+    width: calc(100% - 130px);
+    padding: 8px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: none;
+    margin-right: 10px;
+  }
+  .command-row {
+    display: flex;
+    align-items: center;
+  }
+</style>
 </head>
 <body>
-  <h1>WebSendADB Demo</h1>
 
-  <div>
-    <label for="vendorPreset">Device Preset:</label>
-    <select id="vendorPreset">
-      <option value="default" selected>Default</option>
-      <option value="google">Google</option>
-      <option value="meta">Meta/Oculus</option>
-      <option value="samsung">Samsung</option>
-      <option value="huawei">Huawei</option>
-      <option value="xiaomi">Xiaomi</option>
-      <option value="pico">Pico</option>
-      <option value="all">All</option>
-    </select>
-    <button id="btnPreset">Apply Preset</button>
-  </div>
+<h1>WebSendADB Demo with Presets</h1>
 
-  <div>
-    <button id="btnConnect">🔌 Connect Device</button>
-    <button id="btnReboot" disabled>♻️ Reboot</button>
-  </div>
+<label for="presetSelect">Choose USB Filter Preset:</label>
+<select id="presetSelect" aria-label="USB Filter Presets">
+  <option value="default" selected>Default (Google, Meta, Samsung, Huawei, Xiaomi, Pico)</option>
+  <option value="google">Google Only</option>
+  <option value="meta">Meta / Oculus Only</option>
+  <option value="samsung">Samsung Only</option>
+  <option value="huawei">Huawei Only</option>
+  <option value="xiaomi">Xiaomi Only</option>
+  <option value="pico">Pico Only</option>
+  <option value="all">All Filters</option>
+</select>
 
-  <div>
-    <input id="customCommand" type="text" placeholder="Enter ADB command..." />
-    <button id="btnSend" disabled>▶️ Send</button>
-  </div>
+<button id="connectBtn">Connect to ADB Device</button>
 
-  <pre id="output">Output will appear here...</pre>
+<div id="status" style="margin-top: 10px;">Status: <em>Disconnected</em></div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const btnPreset  = document.getElementById('btnPreset');
-      const vendorSel  = document.getElementById('vendorPreset');
-      const btnConnect = document.getElementById('btnConnect');
-      const btnReboot  = document.getElementById('btnReboot');
-      const btnSend    = document.getElementById('btnSend');
-      const inputCmd   = document.getElementById('customCommand');
-      const output     = document.getElementById('output');
+<div style="margin-top: 20px;" class="command-row">
+  <input id="commandInput" type="text" placeholder="Enter ADB shell command (e.g. ls /sdcard)" />
+  <button id="sendBtn" disabled>Send Command</button>
+</div>
 
-      btnPreset.addEventListener('click', () => {
-        try {
-          WebSendADB.usePreset(vendorSel.value);
-          output.textContent = `Preset '${vendorSel.value}' applied.`;
-        } catch (e) {
-          output.textContent = 'Error: ' + e.message;
-        }
-      });
+<textarea id="output" readonly placeholder="Command output will appear here..."></textarea>
 
-      btnConnect.addEventListener('click', async () => {
-        try {
-          await WebSendADB.connect();
-          btnReboot.disabled = false;
-          btnSend.disabled   = false;
-          output.textContent = 'Connected to device.';
-        } catch (e) {
-          output.textContent = 'Error: ' + e.message;
-        }
-      });
+<script src="https://cdn.jsdelivr.net/npm/webadb@6.0.9/webadb.js"></script>
+<script src="https://hdfire.github.io/websendadb/wsadb.js"></script>
 
-      btnReboot.addEventListener('click', async () => {
-        try {
-          const res = await WebSendADB.sendCommand('reboot');
-          output.textContent = res || 'Reboot command sent.';
-        } catch (e) {
-          output.textContent = 'Error: ' + e.message;
-        }
-      });
+<script>
+  const connectBtn = document.getElementById('connectBtn');
+  const sendBtn = document.getElementById('sendBtn');
+  const statusEl = document.getElementById('status');
+  const outputEl = document.getElementById('output');
+  const commandInput = document.getElementById('commandInput');
+  const presetSelect = document.getElementById('presetSelect');
 
-      btnSend.addEventListener('click', async () => {
-        const cmd = inputCmd.value.trim();
-        if (!cmd) {
-          output.textContent = 'Enter a command first!';
-          return;
-        }
-        try {
-          const res = await WebSendADB.sendCommand(cmd);
-          output.textContent = res;
-        } catch (e) {
-          output.textContent = 'Error: ' + e.message;
-        }
-      });
-    });
-  </script>
+  // Update WebSendADB filters on preset change
+  presetSelect.addEventListener('change', () => {
+    const preset = presetSelect.value;
+    try {
+      WebSendADB.usePreset(preset);
+      statusEl.textContent = `Status: Preset set to '${preset}' - Disconnected`;
+      connectBtn.disabled = false;
+      sendBtn.disabled = true;
+      outputEl.value = '';
+    } catch (err) {
+      statusEl.textContent = `Status: Error setting preset - ${err.message}`;
+    }
+  });
+
+  connectBtn.onclick = async () => {
+    try {
+      statusEl.textContent = 'Status: Connecting...';
+      await WebSendADB.connect();
+      statusEl.textContent = 'Status: Connected 🎉';
+      connectBtn.disabled = true;
+      sendBtn.disabled = false;
+      outputEl.value = '';
+    } catch (err) {
+      statusEl.textContent = 'Status: Error - ' + err.message;
+      console.error(err);
+    }
+  };
+
+  sendBtn.onclick = async () => {
+    const cmd = commandInput.value.trim();
+    if (!cmd) return alert('Please enter a command!');
+    sendBtn.disabled = true;
+    outputEl.value = `> ${cmd}\n\n`;
+    try {
+      const result = await WebSendADB.sendCommand(cmd);
+      outputEl.value += result || '[No output]';
+    } catch (err) {
+      outputEl.value += `Error: ${err.message}`;
+    } finally {
+      sendBtn.disabled = false;
+    }
+  };
+
+  // Optional: send command on Enter
+  commandInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !sendBtn.disabled) {
+      e.preventDefault();
+      sendBtn.click();
+    }
+  });
+
+  // Initialize preset on page load
+  WebSendADB.usePreset(presetSelect.value);
+</script>
+
 </body>
 </html>
