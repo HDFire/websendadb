@@ -1,5 +1,5 @@
 // wsadb.js - WebSendADB wrapper (requires global Adb and AdbWebUsbTransport)
-console.log("WebSendAdb Build 5");
+console.log("WebSendAdb Build 6");
 ;(function(window) {
   'use strict';
   console.log('WebSendADB wrapper loaded');
@@ -21,12 +21,12 @@ console.log("WebSendAdb Build 5");
 
   const presets = {
     default: filters,
-    google:   [{ vendorId:0x18d1 }],
-    meta:     [{ vendorId:0x2833 }],
-    samsung:  [{ vendorId:0x04E8 }],
-    huawei:   [{ vendorId:0x12D1 }],
-    xiaomi:   [{ vendorId:0x2717 }],
-    pico:     [{ vendorId:0x2B0E }],
+    google:   [{ vendorId: 0x18d1 }],
+    meta:     [{ vendorId: 0x2833 }],
+    samsung:  [{ vendorId: 0x04E8 }],
+    huawei:   [{ vendorId: 0x12D1 }],
+    xiaomi:   [{ vendorId: 0x2717 }],
+    pico:     [{ vendorId: 0x2B0E }],
     all:      filters
   };
 
@@ -38,16 +38,21 @@ console.log("WebSendAdb Build 5");
   WebSendADB.connect = async function() {
     console.log('WebSendADB.connect()');
     if (!navigator.usb) throw new Error('WebUSB not supported');
-    if (!window.Adb || !window.AdbWebUsbTransport) {
+
+    const Adb = window.Adb || (window.WebUSB && window.WebUSB.Adb);
+    const AdbWebUsbTransport = window.AdbWebUsbTransport || (window.WebUSB && window.WebUSB.AdbWebUsbTransport);
+
+    if (!Adb || !AdbWebUsbTransport) {
       throw new Error('Host page must include the WebADB library (webadb.js) before wsadb.js');
     }
+
     adbDevice = await navigator.usb.requestDevice({ filters });
     await adbDevice.open();
     await adbDevice.selectConfiguration(1);
     await adbDevice.claimInterface(0);
-    // Use global Adb & AdbWebUsbTransport
-    const transport = new window.AdbWebUsbTransport(adbDevice);
-    const adb = await window.Adb.open(transport);
+
+    const transport = new AdbWebUsbTransport(adbDevice);
+    const adb = await Adb.open(transport);
     adbConnection = await adb.connect('host::');
   };
 
