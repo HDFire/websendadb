@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>WebSendADB Demo</title>
+<title>WebSendADB Demo Build 1 with Presets</title>
 <style>
   body {
     background: #121212;
@@ -63,7 +63,7 @@
 </head>
 <body>
 
-<h1>WebSendADB Demo with Presets & Auto WebADB Load</h1>
+<h1>WebSendADB Demo Build 1 with Presets</h1>
 
 <label for="presetSelect">Choose USB Filter Preset:</label>
 <select id="presetSelect" aria-label="USB Filter Presets">
@@ -88,10 +88,15 @@
 
 <textarea id="output" readonly placeholder="Command output will appear here..."></textarea>
 
-<!-- Only load wsadb.js which dynamically loads webadb -->
+<!-- WebADB library -->
+<script src="https://cdn.jsdelivr.net/npm/webadb@6.0.9/webadb.js"></script>
+
+<!-- WebSendADB wrapper -->
 <script src="https://hdfire.github.io/websendadb/wsadb.js"></script>
 
 <script>
+  console.log('WebSendADB Demo Build 1 loaded');
+
   const connectBtn = document.getElementById('connectBtn');
   const sendBtn = document.getElementById('sendBtn');
   const statusEl = document.getElementById('status');
