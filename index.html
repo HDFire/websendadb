@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>WebSendADB Demo</title>
+<title>WebSendADB Demo with Presets & Auto WebADB Load</title>
 <style>
   body {
     background: #121212;
@@ -63,7 +63,7 @@
 </head>
 <body>
 
-<h1>WebSendADB Demo with Presets</h1>
+<h1>WebSendADB Demo with Presets & Auto WebADB Load</h1>
 
 <label for="presetSelect">Choose USB Filter Preset:</label>
 <select id="presetSelect" aria-label="USB Filter Presets">
@@ -88,7 +88,7 @@
 
 <textarea id="output" readonly placeholder="Command output will appear here..."></textarea>
 
-<script src="https://cdn.jsdelivr.net/npm/webadb@6.0.9/webadb.js"></script>
+<!-- Only load wsadb.js which dynamically loads webadb -->
 <script src="https://hdfire.github.io/websendadb/wsadb.js"></script>
 
 <script>
@@ -150,7 +150,7 @@
     }
   });
 
-  // Initialize preset on page load
+  // Init preset on load
   WebSendADB.usePreset(presetSelect.value);
 </script>
 
