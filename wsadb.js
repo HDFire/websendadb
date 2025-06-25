@@ -1,76 +1,20 @@
-// wsadb.js – WebSendADB wrapper build 10 (ESM + smart loader)
-console.log("WebSendADB wrapper build 10 loaded");
+// wsadb.js – WebSendADB wrapper build 10b (global-safe)
+console.log("WebSendADB wrapper build 10b loaded");
 
-(async function(global) {
+(function(window) {
   'use strict';
-  console.log('wsadb.js ESM init (build 10)');
 
-  // Smart WebADB loader
-  async function loadWebADBModule() {
-    const sources = [
-      // Module-ready versions (if exist)
-      'https://cdn.jsdelivr.net/npm/webadb@6.0.9/webadb.min.js',
-      'https://unpkg.com/webadb@6.0.9/webadb.min.js'
-    ];
-    for (let url of sources) {
-      try {
-        await import(url);
-        if (global.Adb && global.AdbWebUsbTransport) {
-          console.log(`webadb module loaded from ${url}`);
-          return;
-        }
-      } catch (e) {
-        console.warn(`Module import failed: ${url}`, e);
-      }
-    }
-    throw new Error('Unable to load webadb module from CDNs');
-  }
-
-  function loadWebADBScript() {
-    return new Promise((resolve, reject) => {
-      const urls = [
-        'https://cdn.jsdelivr.net/npm/webadb@6.0.9/webadb.js',
-        'https://unpkg.com/webadb@6.0.9/webadb.js'
-      ];
-      (async function attempt(i) {
-        if (i >= urls.length) return reject(new Error('All webadb script loads failed'));
-        const s = document.createElement('script');
-        s.src = urls[i];
-        s.onload = () => resolve();
-        s.onerror = () => {
-          console.warn('Failed script load, trying next CDN:', urls[i]);
-          attempt(i + 1);
-        };
-        document.head.appendChild(s);
-      })(0);
-    });
-  }
-
-  async function ensureWebADB() {
-    const modSupport = typeof import === 'function';
-    if (!global.Adb || !global.AdbWebUsbTransport) {
-      try {
-        if (modSupport) await loadWebADBModule();
-        else await loadWebADBScript();
-      } catch {
-        await loadWebADBScript();
-      }
-      await new Promise(r => setTimeout(r, 50));
-      if (!global.Adb || !global.AdbWebUsbTransport) {
-        throw new Error('WebADB could not be loaded');
-      }
-    }
-  }
-
-  // Basic wrapper
   const WebSendADB = {};
   let adbDevice = null, adbConnection = null;
   const history = [];
 
-  const defaultFilters = [
-    { vendorId: 0x18d1 }, { vendorId: 0x04E8 }, { vendorId: 0x2717 }, { classCode: 0xFF }
+  const filters = [
+    { vendorId: 0x18d1 }, // Google
+    { vendorId: 0x04E8 }, // Samsung
+    { vendorId: 0x2717 }, // Xiaomi
+    { classCode: 0xFF }   // Fallback
   ];
-  let filters = [...defaultFilters];
+
   const presets = {
     default: filters,
     google: [{ vendorId: 0x18d1 }],
@@ -79,14 +23,16 @@ console.log("WebSendADB wrapper build 10 loaded");
     custom: filters
   };
 
-  WebSendADB.usePreset = name => {
+  WebSendADB.usePreset = function(name) {
     if (!presets[name]) throw new Error(`Preset '${name}' not found`);
-    filters = [...presets[name]];
+    filters.length = 0;
+    filters.push(...presets[name]);
   };
-  WebSendADB.addCustomFilter = f => {
-    if (typeof f !== 'object') throw new Error('Filter must be object');
-    filters.push(f);
+
+  WebSendADB.addCustomFilter = function(filter) {
+    if (typeof filter === 'object') filters.push(filter);
   };
+
   WebSendADB.getHistory = () => [...history];
   WebSendADB.isConnected = () => !!adbConnection;
   WebSendADB.disconnect = () => {
@@ -94,21 +40,23 @@ console.log("WebSendADB wrapper build 10 loaded");
     adbDevice = adbConnection = null;
   };
 
-  WebSendADB.sendCommand = async cmd => {
+  WebSendADB.sendCommand = async function(cmd) {
     if (!adbConnection) throw new Error('Not connected');
     history.push(cmd);
     const shell = await adbConnection.shell(cmd);
-    return new TextDecoder().decode(await shell.readAll());
+    const data = await shell.readAll();
+    return new TextDecoder().decode(data);
   };
 
-  WebSendADB.connect = async () => {
+  WebSendADB.connect = async function() {
     if (!navigator.usb) throw new Error('WebUSB not supported');
-    await ensureWebADB();
 
-    const Adb = global.Adb || (global.WebUSB && global.WebUSB.Adb);
-    const AdbWebUsbTransport =
-      global.AdbWebUsbTransport || (global.WebUSB && global.WebUSB.AdbWebUsbTransport);
-    if (!Adb || !AdbWebUsbTransport) throw new Error('WebADB globals not available');
+    if (!window.Adb || !window.AdbWebUsbTransport) {
+      await loadWebADB();
+    }
+
+    const Adb = window.Adb;
+    const AdbWebUsbTransport = window.AdbWebUsbTransport;
 
     adbDevice = await navigator.usb.requestDevice({ filters });
     await adbDevice.open();
@@ -119,10 +67,33 @@ console.log("WebSendADB wrapper build 10 loaded");
     const adb = await Adb.open(transport);
     adbConnection = await adb.connect('host::');
 
-    WebSendADB.sendCommand('getprop ro.product.model')
-      .then(m => console.log('Device model:', m.trim()))
-      .catch(e => console.warn('Model fetch failed', e));
+    console.log("Connected to ADB device.");
   };
 
-  global.WebSendADB = WebSendADB;
+  async function loadWebADB() {
+    const urls = [
+      'https://cdn.jsdelivr.net/npm/webadb@6.0.9/webadb.js',
+      'https://unpkg.com/webadb@6.0.9/webadb.js'
+    ];
+
+    for (let url of urls) {
+      try {
+        await new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = url;
+          s.onload = res;
+          s.onerror = rej;
+          document.head.appendChild(s);
+        });
+
+        if (window.Adb && window.AdbWebUsbTransport) return;
+      } catch (e) {
+        console.warn("Failed to load WebADB from", url);
+      }
+    }
+
+    throw new Error("WebADB could not be loaded from any source.");
+  }
+
+  window.WebSendADB = WebSendADB;
 })(window);
