@@ -1,5 +1,5 @@
-// wsadb.js – WebSendADB wrapper build 10b (global-safe)
-console.log("WebSendADB wrapper build 10b loaded");
+// wsadb.js – WebSendADB wrapper Build 11b (loads webusb.js raw from GitHub)
+console.log("WebSendADB wrapper Build 11b loaded");
 
 (function(window) {
   'use strict';
@@ -8,6 +8,7 @@ console.log("WebSendADB wrapper build 10b loaded");
   let adbDevice = null, adbConnection = null;
   const history = [];
 
+  // USB device filters for ADB
   const filters = [
     { vendorId: 0x18d1 }, // Google
     { vendorId: 0x04E8 }, // Samsung
@@ -52,7 +53,7 @@ console.log("WebSendADB wrapper build 10b loaded");
     if (!navigator.usb) throw new Error('WebUSB not supported');
 
     if (!window.Adb || !window.AdbWebUsbTransport) {
-      await loadWebADB();
+      await loadWebUSB();
     }
 
     const Adb = window.Adb;
@@ -70,10 +71,10 @@ console.log("WebSendADB wrapper build 10b loaded");
     console.log("Connected to ADB device.");
   };
 
-  async function loadWebADB() {
+  async function loadWebUSB() {
+    // Using GitHub raw URL for webusb.js
     const urls = [
-      'https://cdn.jsdelivr.net/npm/webadb@6.0.9/webadb.js',
-      'https://unpkg.com/webadb@6.0.9/webadb.js'
+      'https://raw.githubusercontent.com/webadb/webusb/main/webadb.js'
     ];
 
     for (let url of urls) {
@@ -88,11 +89,11 @@ console.log("WebSendADB wrapper build 10b loaded");
 
         if (window.Adb && window.AdbWebUsbTransport) return;
       } catch (e) {
-        console.warn("Failed to load WebADB from", url);
+        console.warn("Failed to load WebUSB from", url);
       }
     }
 
-    throw new Error("WebADB could not be loaded from any source.");
+    throw new Error("WebUSB could not be loaded from any source.");
   }
 
   window.WebSendADB = WebSendADB;
